@@ -4,6 +4,7 @@ export abstract class Peer {
 	protected isDestroyed = false
 	protected connection: RTCPeerConnection | null = null
 	protected channel: RTCDataChannel | null = null
+	protected abstract otherPeer: 'initiator' | 'responder'
 
 	constructor(protected readonly room: string) {}
 
@@ -13,13 +14,11 @@ export abstract class Peer {
 		this.channel?.close()
 	}
 
-	protected acquireIceCandidatesLoop = async (
-		otherPeer: 'initiator' | 'responder',
-	) => {
+	protected acquireIceCandidatesLoop = async () => {
 		let lastPeerIceCandidateCreatedAt = null
 		while (!this.isDestroyed) {
 			const response = await fetch(
-				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${otherPeer}/ice-candidate`,
+				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.otherPeer}/ice-candidate`,
 			)
 			const data = await response.json()
 			if (data.data !== null && data.data.length > 0) {
@@ -43,4 +42,19 @@ export abstract class Peer {
 			}
 		}
 	}
+
+	protected getRemoteDescription =
+		async (): Promise<RTCSessionDescriptionInit | null> => {
+			while (!this.isDestroyed) {
+				const response = await fetch(
+					`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.otherPeer}/local-description`,
+				)
+				const data = await response.json()
+				if (data.data?.payload) {
+					return JSON.parse(data.data.payload)
+				}
+				await delay(1000)
+			}
+			return null
+		}
 }

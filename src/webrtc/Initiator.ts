@@ -1,9 +1,9 @@
-import { delay } from '../delay'
 import { settings } from '../settings'
 import { Peer } from './Peer'
 
 export class Initiator extends Peer {
 	protected value: { value: string } | null = null
+	otherPeer = 'responder' as const
 
 	constructor(room: string) {
 		super(room)
@@ -41,21 +41,13 @@ export class Initiator extends Peer {
 				body: JSON.stringify(offer),
 			},
 		)
-		const answer = await (async () => {
-			while (!this.isDestroyed) {
-				const response = await fetch(
-					`${settings.webrtcSignalingServer}/api/v1/${this.room}/responder/local-description`,
-				)
-				const data = await response.json()
-				if (data.data?.payload) {
-					return JSON.parse(data.data.payload)
-				}
-				await delay(1000)
-			}
-		})()
+		const answer = await this.getRemoteDescription()
+		if (!answer) {
+			return
+		}
 		this.connection.setRemoteDescription(answer)
 
-		await this.acquireIceCandidatesLoop('responder')
+		await this.acquireIceCandidatesLoop()
 	}
 
 	public send = (value: string) => {
