@@ -3,3 +3,9 @@
 	max-width: 40rem;
 	margin-inline: auto;
 }
+
+output {
+	display: block;
+	font-weight: bold;
+	margin-bottom: 0.5em;
+}
