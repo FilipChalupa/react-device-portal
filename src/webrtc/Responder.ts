@@ -31,14 +31,7 @@ export class Responder extends Peer {
 
 		this.connection.setRemoteDescription(offer)
 		const answer = await this.connection.createAnswer()
-		await this.connection.setLocalDescription(answer)
-		await fetch(
-			`${settings.webrtcSignalingServer}/api/v1/${this.room}/responder/local-description`,
-			{
-				method: 'POST',
-				body: JSON.stringify(answer),
-			},
-		)
+		await this.setAndShareLocalDescription(answer)
 
 		await this.acquireIceCandidatesLoop()
 	}

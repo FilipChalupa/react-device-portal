@@ -61,6 +61,22 @@ export abstract class Peer {
 			return null
 		}
 
+	protected setAndShareLocalDescription = async (
+		description: RTCSessionDescriptionInit,
+	) => {
+		if (!this.connection) {
+			throw new Error('Connection is not initialized')
+		}
+		await this.connection.setLocalDescription(description)
+		await fetch(
+			`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/local-description`,
+			{
+				method: 'POST',
+				body: JSON.stringify(description),
+			},
+		)
+	}
+
 	protected shareNewIceCandidate = async (event: RTCPeerConnectionIceEvent) => {
 		if (event.candidate) {
 			await fetch(

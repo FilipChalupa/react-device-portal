@@ -23,14 +23,7 @@ export class Initiator extends Peer {
 		}
 		this.connection.onicecandidate = this.shareNewIceCandidate
 		const offer = await this.connection.createOffer()
-		await this.connection.setLocalDescription(offer)
-		await fetch(
-			`${settings.webrtcSignalingServer}/api/v1/${this.room}/initiator/local-description`,
-			{
-				method: 'POST',
-				body: JSON.stringify(offer),
-			},
-		)
+		await this.setAndShareLocalDescription(offer)
 		const answer = await this.getRemoteDescription()
 		if (!answer) {
 			return
