@@ -2,6 +2,8 @@
 
 [![NPM](https://img.shields.io/npm/v/react-device-portal.svg)](https://www.npmjs.com/package/react-device-portal) ![npm type definitions](https://img.shields.io/npm/types/shared-loading-indicator.svg)
 
+See [Storybook example here](https://filipchalupa.cz/react-device-portal).
+
 ## Install
 
 ```bash
