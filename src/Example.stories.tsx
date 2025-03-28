@@ -12,8 +12,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const room =
-	localStorage.getItem('room') ??
-	`storybook-${Math.random().toString(36).substring(2, 7)}`
+	localStorage.getItem('room') ||
+	prompt('Enter room name', localStorage.getItem('room') || 'storybook') ||
+	'storybook'
 localStorage.setItem('room', room)
 
 const InputComponent: FunctionComponent = () => {
@@ -22,7 +23,9 @@ const InputComponent: FunctionComponent = () => {
 
 	return (
 		<div>
-			<p>Providing value:</p>
+			<p>
+				Providing value for room "<b>{room}</b>":
+			</p>
 			<output>{value}</output>
 			<div>
 				<button
@@ -50,7 +53,9 @@ const OutputComponent: FunctionComponent = () => {
 	const value = useDevicePortalOutput(room)
 	return (
 		<div>
-			<p>Value provided by the input is:</p>
+			<p>
+				Value provided by the input in room "<b>{room}</b>" is:
+			</p>
 			<output>{value}</output>
 		</div>
 	)
