@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { FunctionComponent, useState } from 'react'
+import { FunctionComponent, Suspense, useState } from 'react'
 import './Example.stories.css'
 import { useDevicePortalInput } from './useDevicePortalInput'
 import { useDevicePortalOutput } from './useDevicePortalOutput'
@@ -72,7 +72,9 @@ export const Output: Story = {
 		return (
 			<div className="wrapper">
 				<h1>Demo output</h1>
-				<OutputComponent />
+				<Suspense fallback={<p>Connecting…</p>}>
+					<OutputComponent />
+				</Suspense>
 			</div>
 		)
 	},
