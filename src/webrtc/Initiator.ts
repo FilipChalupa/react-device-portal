@@ -12,6 +12,7 @@ export class Initiator extends Peer {
 
 	protected connect = async () => {
 		this.connection = new RTCPeerConnection()
+		this.connection.onicecandidate = this.shareNewIceCandidate
 		this.channel = this.connection.createDataChannel(settings.channel)
 		this.channel.onopen = () => {
 			if (this.value) {
@@ -21,7 +22,6 @@ export class Initiator extends Peer {
 		this.channel.onmessage = (event) => {
 			// @TODO: handle message from responder
 		}
-		this.connection.onicecandidate = this.shareNewIceCandidate
 		const offer = await this.connection.createOffer()
 		await this.setAndShareLocalDescription(offer)
 		const answer = await this.getRemoteDescription()
