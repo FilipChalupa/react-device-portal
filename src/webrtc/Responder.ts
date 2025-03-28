@@ -18,18 +18,15 @@ export class Responder extends Peer {
 					`${settings.webrtcSignalingServer}/api/v1/${this.room}/initiator/local-description`,
 				)
 				const data = await response.json()
-				console.log(data)
 				if (data.data?.payload) {
 					return JSON.parse(data.data.payload)
 				}
 				await delay(1000)
 			}
 		})()
-		console.log('Offer received:', offer)
 		this.connection = new RTCPeerConnection()
 		this.connection.onicecandidate = async (event) => {
 			if (event.candidate) {
-				console.log('ICE candidate:', event.candidate)
 				await fetch(
 					`${settings.webrtcSignalingServer}/api/v1/${this.room}/responder/ice-candidate`,
 					{
@@ -39,19 +36,12 @@ export class Responder extends Peer {
 				)
 			}
 		}
-		this.connection.oniceconnectionstatechange = () => {
-			console.log('ICE connection state:', this.connection?.iceConnectionState)
-		}
-		this.connection.onconnectionstatechange = () => {
-			console.log('Connection state:', this.connection?.connectionState)
-		}
 		this.connection.ondatachannel = (event) => {
-			this.channel = event.channel
-			this.channel.onopen = (event) => {
-				console.log('Channel opened', event)
+			if (event.channel.label !== settings.channel) {
+				return
 			}
+			this.channel = event.channel
 			this.channel.onmessage = (event) => {
-				console.log('Message received on data channel:', event.data)
 				this.onValue(event.data)
 			}
 		}
@@ -66,8 +56,6 @@ export class Responder extends Peer {
 				body: JSON.stringify(answer),
 			},
 		)
-		console.log('Answer created:', answer)
-		console.log(JSON.stringify(this.connection.localDescription))
 
 		let lastPeerIceCandidateCreatedAt = null
 		while (!this.isDestroyed) {
@@ -75,7 +63,6 @@ export class Responder extends Peer {
 				`${settings.webrtcSignalingServer}/api/v1/${this.room}/initiator/ice-candidate`,
 			)
 			const data = await response.json()
-			console.log(data)
 			if (data.data !== null && data.data.length > 0) {
 				const newCandidates = data.data
 					.filter(
@@ -83,13 +70,8 @@ export class Responder extends Peer {
 							lastPeerIceCandidateCreatedAt === null ||
 							item.createdAt > lastPeerIceCandidateCreatedAt,
 					)
-					.map(({ payload }) => {
-						console.log(payload)
-						return new RTCIceCandidate(JSON.parse(payload))
-					})
-				console.log({ newCandidates })
+					.map(({ payload }) => new RTCIceCandidate(JSON.parse(payload)))
 				for (const candidate of newCandidates) {
-					console.log('Add ICE candidate:', candidate)
 					await this.connection.addIceCandidate(candidate)
 				}
 				lastPeerIceCandidateCreatedAt = data.data.at(-1).createdAt

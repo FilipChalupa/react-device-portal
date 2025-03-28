@@ -26,18 +26,10 @@ export const useDevicePortalOutput = (room: string) => {
 	if (!responders[room]) {
 		const { promise: firstValuePromise, resolve: firstValueResolve } =
 			Promise.withResolvers<string>()
-		console.log('Create responder')
 		const responder = new Responder(room, (value) => {
-			console.log('Received value:', value)
 			responders[room].value = { value }
-			console.log('Will update state')
-			console.log(setValueState)
-			responders[room].setValueState((p) => {
-				console.log('previous state', p)
-				return { room, value }
-			})
+			responders[room].setValueState({ room, value })
 			firstValueResolve(value)
-			console.log('done')
 		})
 		responders[room] = {
 			responder,

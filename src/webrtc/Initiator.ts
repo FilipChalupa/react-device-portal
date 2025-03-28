@@ -14,18 +14,15 @@ export class Initiator extends Peer {
 		this.connection = new RTCPeerConnection()
 		this.channel = this.connection.createDataChannel(settings.channel)
 		this.channel.onopen = () => {
-			console.log('Channel opened')
-
 			if (this.value) {
 				this.channel?.send(this.value.value)
 			}
 		}
 		this.channel.onmessage = (event) => {
-			console.log('Message received:', event.data)
+			// @TODO: handle message from responder
 		}
 		this.connection.onicecandidate = async (event) => {
 			if (event.candidate) {
-				console.log('ICE candidate:', event.candidate)
 				await fetch(
 					`${settings.webrtcSignalingServer}/api/v1/${this.room}/initiator/ice-candidate`,
 					{
@@ -33,18 +30,6 @@ export class Initiator extends Peer {
 						body: JSON.stringify(event.candidate.toJSON()),
 					},
 				)
-			}
-		}
-		this.connection.oniceconnectionstatechange = (event) => {
-			console.log('ICE connection state:', this.connection?.iceConnectionState)
-		}
-		this.connection.onconnectionstatechange = () => {
-			console.log('Connection state:', this.connection?.connectionState)
-		}
-		this.connection.ondatachannel = (event) => {
-			const { channel } = event
-			channel.onmessage = (event) => {
-				console.log('Message received on data channel:', event.data)
 			}
 		}
 		const offer = await this.connection.createOffer()
@@ -56,15 +41,12 @@ export class Initiator extends Peer {
 				body: JSON.stringify(offer),
 			},
 		)
-		console.log('Offer created:', offer)
-		console.log(JSON.stringify(this.connection.localDescription))
 		const answer = await (async () => {
 			while (!this.isDestroyed) {
 				const response = await fetch(
 					`${settings.webrtcSignalingServer}/api/v1/${this.room}/responder/local-description`,
 				)
 				const data = await response.json()
-				console.log(data)
 				if (data.data?.payload) {
 					return JSON.parse(data.data.payload)
 				}
@@ -72,7 +54,6 @@ export class Initiator extends Peer {
 			}
 		})()
 		this.connection.setRemoteDescription(answer)
-		console.log('Answer received:', answer)
 
 		let lastPeerIceCandidateCreatedAt = null
 		while (!this.isDestroyed) {
@@ -80,7 +61,6 @@ export class Initiator extends Peer {
 				`${settings.webrtcSignalingServer}/api/v1/${this.room}/responder/ice-candidate`,
 			)
 			const data = await response.json()
-			console.log(data)
 			if (data.data !== null && data.data.length > 0) {
 				const newCandidates = data.data
 					.filter(
@@ -89,9 +69,7 @@ export class Initiator extends Peer {
 							item.createdAt > lastPeerIceCandidateCreatedAt,
 					)
 					.map(({ payload }) => new RTCIceCandidate(JSON.parse(payload)))
-				console.log({ newCandidates })
 				for (const candidate of newCandidates) {
-					console.log('Add ICE candidate:', candidate)
 					await this.connection.addIceCandidate(candidate)
 				}
 				lastPeerIceCandidateCreatedAt = data.data.at(-1).createdAt
