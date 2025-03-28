@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import { Responder } from './webrtc/Responder'
 
 // @TODO: warn if one room is used by multiple useDevicePortalOutput hooks more than once at the same time
@@ -8,6 +8,12 @@ const responders: {
 		responder: Responder
 		firstValuePromise: Promise<string>
 		value: null | { value: string }
+		setValueState: Dispatch<
+			SetStateAction<{
+				room: string
+				value: string
+			}>
+		>
 	}
 } = {}
 
@@ -16,6 +22,7 @@ export const useDevicePortalOutput = (room: string) => {
 		room: string
 		value: string
 	} | null>(null)
+
 	if (!responders[room]) {
 		const { promise: firstValuePromise, resolve: firstValueResolve } =
 			Promise.withResolvers<string>()
@@ -25,7 +32,7 @@ export const useDevicePortalOutput = (room: string) => {
 			responders[room].value = { value }
 			console.log('Will update state')
 			console.log(setValueState)
-			setValueState((p) => {
+			responders[room].setValueState((p) => {
 				console.log('previous state', p)
 				return { room, value }
 			})
@@ -36,18 +43,11 @@ export const useDevicePortalOutput = (room: string) => {
 			responder,
 			firstValuePromise,
 			value: null,
+			setValueState,
 		}
 	}
-	console.log(
-		valueState !== null && valueState.room === room,
-		valueState,
-		'!==',
-		null,
-		'&&',
-		valueState?.room,
-		'===',
-		room,
-	)
+	responders[room].setValueState = setValueState
+
 	if (valueState !== null && valueState.room === room) {
 		return valueState.value
 	}
