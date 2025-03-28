@@ -2,7 +2,7 @@ import { settings } from '../settings'
 import { Peer } from './Peer'
 
 export class Responder extends Peer {
-	otherPeer = 'initiator' as const
+	role = 'responder' as const
 
 	constructor(
 		protected readonly room: string,
@@ -18,17 +18,7 @@ export class Responder extends Peer {
 			return
 		}
 		this.connection = new RTCPeerConnection()
-		this.connection.onicecandidate = async (event) => {
-			if (event.candidate) {
-				await fetch(
-					`${settings.webrtcSignalingServer}/api/v1/${this.room}/responder/ice-candidate`,
-					{
-						method: 'POST',
-						body: JSON.stringify(event.candidate.toJSON()),
-					},
-				)
-			}
-		}
+		this.connection.onicecandidate = this.shareNewIceCandidate
 		this.connection.ondatachannel = (event) => {
 			if (event.channel.label !== settings.channel) {
 				return

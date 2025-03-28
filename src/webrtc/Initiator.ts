@@ -3,7 +3,7 @@ import { Peer } from './Peer'
 
 export class Initiator extends Peer {
 	protected value: { value: string } | null = null
-	otherPeer = 'responder' as const
+	role = 'initiator' as const
 
 	constructor(room: string) {
 		super(room)
@@ -21,17 +21,7 @@ export class Initiator extends Peer {
 		this.channel.onmessage = (event) => {
 			// @TODO: handle message from responder
 		}
-		this.connection.onicecandidate = async (event) => {
-			if (event.candidate) {
-				await fetch(
-					`${settings.webrtcSignalingServer}/api/v1/${this.room}/initiator/ice-candidate`,
-					{
-						method: 'POST',
-						body: JSON.stringify(event.candidate.toJSON()),
-					},
-				)
-			}
-		}
+		this.connection.onicecandidate = this.shareNewIceCandidate
 		const offer = await this.connection.createOffer()
 		await this.connection.setLocalDescription(offer)
 		await fetch(

@@ -4,7 +4,7 @@ export abstract class Peer {
 	protected isDestroyed = false
 	protected connection: RTCPeerConnection | null = null
 	protected channel: RTCDataChannel | null = null
-	protected abstract otherPeer: 'initiator' | 'responder'
+	protected abstract role: 'initiator' | 'responder'
 
 	constructor(protected readonly room: string) {}
 
@@ -14,11 +14,14 @@ export abstract class Peer {
 		this.channel?.close()
 	}
 
+	protected getOtherPeerRole = () =>
+		this.role === 'initiator' ? 'responder' : 'initiator'
+
 	protected acquireIceCandidatesLoop = async () => {
 		let lastPeerIceCandidateCreatedAt = null
 		while (!this.isDestroyed) {
 			const response = await fetch(
-				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.otherPeer}/ice-candidate`,
+				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/ice-candidate`,
 			)
 			const data = await response.json()
 			if (data.data !== null && data.data.length > 0) {
@@ -47,7 +50,7 @@ export abstract class Peer {
 		async (): Promise<RTCSessionDescriptionInit | null> => {
 			while (!this.isDestroyed) {
 				const response = await fetch(
-					`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.otherPeer}/local-description`,
+					`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/local-description`,
 				)
 				const data = await response.json()
 				if (data.data?.payload) {
@@ -57,4 +60,16 @@ export abstract class Peer {
 			}
 			return null
 		}
+
+	protected shareNewIceCandidate = async (event: RTCPeerConnectionIceEvent) => {
+		if (event.candidate) {
+			await fetch(
+				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/ice-candidate`,
+				{
+					method: 'POST',
+					body: JSON.stringify(event.candidate.toJSON()),
+				},
+			)
+		}
+	}
 }
