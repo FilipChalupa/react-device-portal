@@ -83,7 +83,7 @@ export const useDevicePortalOutput = (room: string) => {
 				)
 				const data = await response.json()
 				console.log(data)
-				if (data.data.length > 0) {
+				if (data.data !== null && data.data.length > 0) {
 					const newCandidates = data.data
 						.filter(
 							(item) =>

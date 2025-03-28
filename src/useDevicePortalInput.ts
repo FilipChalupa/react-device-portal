@@ -1,8 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { delay } from './delay'
 import { settings } from './settings'
 
 export const useDevicePortalInput = (room: string, value: string) => {
+	const valueRef = useRef(value)
+	valueRef.current = value
+
 	useEffect(() => {
 		;(async () => {
 			const roomSlug = encodeURIComponent(room)
@@ -11,7 +14,7 @@ export const useDevicePortalInput = (room: string, value: string) => {
 			channel.onopen = () => {
 				console.log('Channel opened')
 
-				channel.send('Hello from initiator!')
+				channel.send(valueRef.current) // @TODO: send on value change too
 			}
 			channel.onmessage = (event) => {
 				console.log('Message received:', event.data)
