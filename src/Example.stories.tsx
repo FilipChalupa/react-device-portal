@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { FunctionComponent, Suspense, useState } from 'react'
+import { FunctionComponent, Suspense, useRef, useState } from 'react'
 import './Example.stories.css'
 import { useDevicePortalInput } from './useDevicePortalInput'
 import { useDevicePortalOutput } from './useDevicePortalOutput'
@@ -18,11 +18,25 @@ const room =
 localStorage.setItem('room', room)
 
 const InputComponent: FunctionComponent = () => {
+	const ref = useRef<HTMLDivElement>(null)
 	const [value, setState] = useState(1)
-	useDevicePortalInput(room, value.toString())
+	useDevicePortalInput(room, value.toString(), (value) => {
+		if (value === 'roll') {
+			ref.current?.animate(
+				[
+					{
+						transform: 'rotate(1turn)',
+					},
+				],
+				{
+					duration: 1000,
+				},
+			)
+		}
+	})
 
 	return (
-		<div>
+		<div ref={ref} style={{ display: 'inline-block' }}>
 			<p>
 				Providing value for room "<b>{room}</b>":
 			</p>
@@ -50,7 +64,7 @@ const InputComponent: FunctionComponent = () => {
 }
 
 const OutputComponent: FunctionComponent = () => {
-	const { value } = useDevicePortalOutput(room)
+	const { value, sendValueToInput } = useDevicePortalOutput(room)
 	return (
 		<div>
 			<p>
@@ -61,7 +75,7 @@ const OutputComponent: FunctionComponent = () => {
 				<button
 					type="button"
 					onClick={() => {
-						//
+						sendValueToInput('roll')
 					}}
 				>
 					Do barrel roll
