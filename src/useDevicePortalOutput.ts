@@ -35,10 +35,12 @@ export const useDevicePortalOutput = (
 	if (!responders[room]) {
 		const { promise: firstValuePromise, resolve: firstValueResolve } =
 			Promise.withResolvers<string>()
-		const responder = new Responder(room, (value) => {
-			responders[room].output = { value, sendValueToInput }
-			responders[room].setValueState({ room, value, sendValueToInput })
-			firstValueResolve(value)
+		const responder = new Responder(room, {
+			onValue: (value) => {
+				responders[room].output = { value, sendValueToInput }
+				responders[room].setValueState({ room, value, sendValueToInput })
+				firstValueResolve(value)
+			},
 		})
 		const sendValueToInput = (value: string) => {
 			responder.send(value)

@@ -13,8 +13,10 @@ export const useDevicePortalInput = (
 	onValueFromOutputRef.current = onValueFromOutput
 
 	useEffect(() => {
-		const initiator = new Initiator(encodeURIComponent(room), (value) => {
-			onValueFromOutputRef.current?.(value)
+		const initiator = new Initiator(encodeURIComponent(room), {
+			onValue: (value) => {
+				onValueFromOutputRef.current?.(value)
+			},
 		})
 		setInitiator(initiator)
 

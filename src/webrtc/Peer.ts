@@ -6,11 +6,15 @@ export abstract class Peer {
 	protected channel: RTCDataChannel | null = null
 	protected abstract role: 'initiator' | 'responder'
 	protected value: { value: string } | null = null
+	protected readonly onValue?: (value: string) => void
 
 	constructor(
 		protected readonly room: string,
-		protected readonly onValue?: (value: string) => void,
+		options: {
+			onValue?: (value: string) => void
+		} = {},
 	) {
+		this.onValue = options.onValue
 		this.connect()
 	}
 
