@@ -19,15 +19,37 @@ export abstract class Peer {
 		this.onValue = options.onValue
 		this.sendLastValueOnConnectAndReconnect =
 			options.sendLastValueOnConnectAndReconnect ?? true
-		this.connect()
+		this.run()
+	}
+
+	protected async run() {
+		try {
+			await this.connect()
+		} catch (error) {
+			queueMicrotask(() => {
+				throw error
+			})
+		} finally {
+			this.close()
+		}
+		if (this.isDestroyed) {
+			return
+		}
+		await this.run() // Reestablish new connection
 	}
 
 	protected abstract connect(): Promise<void>
 
+	protected close() {
+		this.connection?.close()
+		this.connection = null
+		this.channel?.close()
+		this.channel = null
+	}
+
 	public destroy() {
 		this.isDestroyed = true
-		this.connection?.close()
-		this.channel?.close()
+		this.close()
 	}
 
 	protected getOtherPeerRole() {
@@ -57,7 +79,10 @@ export abstract class Peer {
 			await delay(
 				this.connection?.connectionState === 'connected' ? 5000 : 2000,
 			)
-			if (this.connection?.connectionState === 'closed') {
+			if (
+				this.connection?.connectionState === 'closed' ||
+				this.connection?.connectionState === 'failed'
+			) {
 				return
 			}
 		}
