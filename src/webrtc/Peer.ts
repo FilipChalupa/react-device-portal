@@ -11,7 +11,6 @@ export abstract class Peer {
 		protected readonly room: string,
 		protected readonly onValue?: (value: string) => void,
 	) {
-		this.room = room
 		this.connect()
 	}
 
