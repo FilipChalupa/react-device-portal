@@ -6,18 +6,27 @@ export abstract class Peer {
 	protected channel: RTCDataChannel | null = null
 	protected abstract role: 'initiator' | 'responder'
 
-	constructor(protected readonly room: string) {}
+	constructor(
+		protected readonly room: string,
+		protected readonly onValue?: (value: string) => void,
+	) {
+		this.room = room
+		this.connect()
+	}
 
-	public destroy = () => {
+	protected abstract connect(): Promise<void>
+
+	public destroy() {
 		this.isDestroyed = true
 		this.connection?.close()
 		this.channel?.close()
 	}
 
-	protected getOtherPeerRole = () =>
-		this.role === 'initiator' ? 'responder' : 'initiator'
+	protected getOtherPeerRole() {
+		return this.role === 'initiator' ? 'responder' : 'initiator'
+	}
 
-	protected acquireIceCandidatesLoop = async () => {
+	protected async acquireIceCandidatesLoop() {
 		let lastPeerIceCandidateCreatedAt = null
 		while (!this.isDestroyed) {
 			const response = await fetch(
@@ -46,24 +55,23 @@ export abstract class Peer {
 		}
 	}
 
-	protected getRemoteDescription =
-		async (): Promise<RTCSessionDescriptionInit | null> => {
-			while (!this.isDestroyed) {
-				const response = await fetch(
-					`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/local-description`,
-				)
-				const data = await response.json()
-				if (data.data?.payload) {
-					return JSON.parse(data.data.payload)
-				}
-				await delay(1000)
+	protected async getRemoteDescription(): Promise<RTCSessionDescriptionInit | null> {
+		while (!this.isDestroyed) {
+			const response = await fetch(
+				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/local-description`,
+			)
+			const data = await response.json()
+			if (data.data?.payload) {
+				return JSON.parse(data.data.payload)
 			}
-			return null
+			await delay(1000)
 		}
+		return null
+	}
 
-	protected setAndShareLocalDescription = async (
+	protected async setAndShareLocalDescription(
 		description: RTCSessionDescriptionInit,
-	) => {
+	) {
 		if (!this.connection) {
 			throw new Error('Connection is not initialized')
 		}
@@ -77,7 +85,7 @@ export abstract class Peer {
 		)
 	}
 
-	protected shareNewIceCandidate = async (event: RTCPeerConnectionIceEvent) => {
+	protected async shareNewIceCandidate(event: RTCPeerConnectionIceEvent) {
 		if (event.candidate) {
 			await fetch(
 				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/ice-candidate`,

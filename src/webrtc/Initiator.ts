@@ -5,14 +5,9 @@ export class Initiator extends Peer {
 	protected value: { value: string } | null = null
 	role = 'initiator' as const
 
-	constructor(room: string) {
-		super(room)
-		this.connect()
-	}
-
-	protected connect = async () => {
+	protected async connect() {
 		this.connection = new RTCPeerConnection()
-		this.connection.onicecandidate = this.shareNewIceCandidate
+		this.connection.onicecandidate = this.shareNewIceCandidate.bind(this)
 		this.channel = this.connection.createDataChannel(settings.channel)
 		this.channel.onopen = () => {
 			if (this.value) {
@@ -20,7 +15,7 @@ export class Initiator extends Peer {
 			}
 		}
 		this.channel.onmessage = (event) => {
-			// @TODO: handle message from responder
+			this.onValue?.(event.data)
 		}
 		const offer = await this.connection.createOffer()
 		await this.setAndShareLocalDescription(offer)
@@ -33,7 +28,7 @@ export class Initiator extends Peer {
 		await this.acquireIceCandidatesLoop()
 	}
 
-	public send = (value: string) => {
+	public send(value: string) {
 		if (this.channel?.readyState === 'open') {
 			this.channel.send(value)
 		}
