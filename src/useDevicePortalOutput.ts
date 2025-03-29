@@ -41,6 +41,7 @@ export const useDevicePortalOutput = (
 				responders[room].setValueState({ room, value, sendValueToInput })
 				firstValueResolve(value)
 			},
+			sendLastValueOnConnectAndReconnect: false,
 		})
 		const sendValueToInput = (value: string) => {
 			responder.send(value)

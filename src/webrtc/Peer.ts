@@ -6,15 +6,19 @@ export abstract class Peer {
 	protected channel: RTCDataChannel | null = null
 	protected abstract role: 'initiator' | 'responder'
 	protected value: { value: string } | null = null
-	protected readonly onValue?: (value: string) => void
+	protected readonly onValue: ((value: string) => void) | undefined
+	protected readonly sendLastValueOnConnectAndReconnect: boolean
 
 	constructor(
 		protected readonly room: string,
 		options: {
 			onValue?: (value: string) => void
+			sendLastValueOnConnectAndReconnect?: boolean
 		} = {},
 	) {
 		this.onValue = options.onValue
+		this.sendLastValueOnConnectAndReconnect =
+			options.sendLastValueOnConnectAndReconnect ?? true
 		this.connect()
 	}
 
@@ -116,7 +120,7 @@ export abstract class Peer {
 			id: settings.channel.id,
 		})
 		this.channel.onopen = () => {
-			if (this.value) {
+			if (this.value && this.sendLastValueOnConnectAndReconnect) {
 				this.channel?.send(this.value.value)
 			}
 		}
