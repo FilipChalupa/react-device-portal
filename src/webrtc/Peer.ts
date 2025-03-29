@@ -9,6 +9,7 @@ export abstract class Peer {
 	protected readonly onValue: ((value: string) => void) | undefined
 	protected readonly sendLastValueOnConnectAndReconnect: boolean
 	protected readonly webrtcSignalingServer: string
+	protected readonly iceServers: Array<RTCIceServer>
 
 	constructor(
 		protected readonly room: string,
@@ -16,6 +17,7 @@ export abstract class Peer {
 			onValue?: (value: string) => void
 			sendLastValueOnConnectAndReconnect?: boolean
 			webrtcSignalingServer?: string
+			iceServers?: Array<RTCIceServer>
 		} = {},
 	) {
 		this.onValue = options.onValue
@@ -23,6 +25,7 @@ export abstract class Peer {
 			options.sendLastValueOnConnectAndReconnect ?? true
 		this.webrtcSignalingServer =
 			options.webrtcSignalingServer ?? settings.webrtcSignalingServer
+		this.iceServers = options.iceServers ?? settings.iceServers
 		this.run()
 	}
 
