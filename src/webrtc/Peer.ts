@@ -8,17 +8,21 @@ export abstract class Peer {
 	protected value: { value: string } | null = null
 	protected readonly onValue: ((value: string) => void) | undefined
 	protected readonly sendLastValueOnConnectAndReconnect: boolean
+	protected readonly webrtcSignalingServer: string
 
 	constructor(
 		protected readonly room: string,
 		options: {
 			onValue?: (value: string) => void
 			sendLastValueOnConnectAndReconnect?: boolean
+			webrtcSignalingServer?: string
 		} = {},
 	) {
 		this.onValue = options.onValue
 		this.sendLastValueOnConnectAndReconnect =
 			options.sendLastValueOnConnectAndReconnect ?? true
+		this.webrtcSignalingServer =
+			options.webrtcSignalingServer ?? settings.webrtcSignalingServer
 		this.run()
 	}
 
@@ -65,7 +69,7 @@ export abstract class Peer {
 		let lastPeerIceCandidateCreatedAt = null
 		while (!this.isDestroyed) {
 			const response = await fetch(
-				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/ice-candidate`,
+				`${this.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/ice-candidate`,
 			)
 			const data = await response.json()
 			if (data.data !== null && data.data.length > 0) {
@@ -96,7 +100,7 @@ export abstract class Peer {
 	protected async getRemoteDescription(): Promise<RTCSessionDescriptionInit | null> {
 		while (!this.isDestroyed) {
 			const response = await fetch(
-				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/local-description`,
+				`${this.webrtcSignalingServer}/api/v1/${this.room}/${this.getOtherPeerRole()}/local-description`,
 			)
 			const data = await response.json()
 			if (data.data?.payload) {
@@ -115,7 +119,7 @@ export abstract class Peer {
 		}
 		await this.connection.setLocalDescription(description)
 		await fetch(
-			`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/local-description`,
+			`${this.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/local-description`,
 			{
 				method: 'POST',
 				body: JSON.stringify(description),
@@ -126,7 +130,7 @@ export abstract class Peer {
 	protected async shareNewIceCandidate(event: RTCPeerConnectionIceEvent) {
 		if (event.candidate) {
 			await fetch(
-				`${settings.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/ice-candidate`,
+				`${this.webrtcSignalingServer}/api/v1/${this.room}/${this.role}/ice-candidate`,
 				{
 					method: 'POST',
 					body: JSON.stringify(event.candidate.toJSON()),
