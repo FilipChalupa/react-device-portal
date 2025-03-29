@@ -23,9 +23,11 @@ export abstract class Peer {
 	}
 
 	protected async run() {
+		let failed = false
 		try {
 			await this.connect()
 		} catch (error) {
+			failed = true
 			queueMicrotask(() => {
 				throw error
 			})
@@ -34,6 +36,9 @@ export abstract class Peer {
 		}
 		if (this.isDestroyed) {
 			return
+		}
+		if (failed) {
+			await delay(Math.random() * 5000 + 1000)
 		}
 		await this.run() // Reestablish new connection
 	}
