@@ -5,6 +5,7 @@ export abstract class Peer {
 	protected connection: RTCPeerConnection | null = null
 	protected channel: RTCDataChannel | null = null
 	protected abstract role: 'initiator' | 'responder'
+	protected value: { value: string } | null = null
 
 	constructor(
 		protected readonly room: string,
@@ -94,6 +95,30 @@ export abstract class Peer {
 					body: JSON.stringify(event.candidate.toJSON()),
 				},
 			)
+		}
+	}
+
+	public send(value: string) {
+		if (this.channel?.readyState === 'open') {
+			this.channel.send(value)
+		}
+		this.value = { value }
+	}
+
+	protected initializeConnectionAndChannel() {
+		this.connection = new RTCPeerConnection()
+		this.connection.onicecandidate = this.shareNewIceCandidate.bind(this)
+		this.channel = this.connection.createDataChannel(settings.channel.label, {
+			negotiated: true,
+			id: settings.channel.id,
+		})
+		this.channel.onopen = () => {
+			if (this.value) {
+				this.channel?.send(this.value.value)
+			}
+		}
+		this.channel.onmessage = (event) => {
+			this.onValue?.(event.data)
 		}
 	}
 }
