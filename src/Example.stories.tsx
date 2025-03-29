@@ -50,13 +50,23 @@ const InputComponent: FunctionComponent = () => {
 }
 
 const OutputComponent: FunctionComponent = () => {
-	const value = useDevicePortalOutput(room)
+	const { value } = useDevicePortalOutput(room)
 	return (
 		<div>
 			<p>
 				Value provided by the input in room "<b>{room}</b>" is:
 			</p>
 			<output>{value}</output>
+			<div>
+				<button
+					type="button"
+					onClick={() => {
+						//
+					}}
+				>
+					Do barrel roll
+				</button>
+			</div>
 		</div>
 	)
 }

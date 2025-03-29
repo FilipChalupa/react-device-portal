@@ -1,51 +1,62 @@
-import { useState, type Dispatch, type SetStateAction } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { Responder } from './webrtc/Responder'
 
 // @TODO: warn if one room is used by multiple useDevicePortalOutput hooks more than once at the same time
+
+type State = {
+	room: string
+	value: string
+	sendValueToInput: (value: string) => void
+}
 
 const responders: {
 	[room: string]: {
 		responder: Responder
 		firstValuePromise: Promise<string>
-		value: null | { value: string }
-		setValueState: Dispatch<
-			SetStateAction<{
-				room: string
-				value: string
-			}>
-		>
+		output: null | { value: string; sendValueToInput: (value: string) => void }
+		setValueState: Dispatch<SetStateAction<State>>
 	}
 } = {}
 
-export const useDevicePortalOutput = (room: string) => {
-	const [valueState, setValueState] = useState<{
-		room: string
-		value: string
-	} | null>(null)
+export const useDevicePortalOutput = (
+	room: string,
+): Pick<State, 'value' | 'sendValueToInput'> => {
+	const [valueState, setValueState] = useState<State | null>(null)
+	const output = useMemo(() => {
+		if (valueState === null || valueState.room !== room) {
+			return null
+		}
+		return {
+			value: valueState.value,
+			sendValueToInput: valueState.sendValueToInput,
+		}
+	}, [])
 
 	if (!responders[room]) {
 		const { promise: firstValuePromise, resolve: firstValueResolve } =
 			Promise.withResolvers<string>()
 		const responder = new Responder(room, (value) => {
-			responders[room].value = { value }
-			responders[room].setValueState({ room, value })
+			responders[room].output = { value, sendValueToInput }
+			responders[room].setValueState({ room, value, sendValueToInput })
 			firstValueResolve(value)
 		})
+		const sendValueToInput = (value: string) => {
+			responder.send(value)
+		}
 		responders[room] = {
 			responder,
 			firstValuePromise,
-			value: null,
+			output: null,
 			setValueState,
 		}
 	}
 	responders[room].setValueState = setValueState
 
-	if (valueState !== null && valueState.room === room) {
-		return valueState.value
+	if (output) {
+		return output
 	}
-	if (responders[room].value !== null) {
-		return responders[room].value.value
+	if (responders[room].output) {
+		return responders[room].output
 	}
-
 	throw responders[room].firstValuePromise
 }
