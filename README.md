@@ -1,3 +1,6 @@
+> [!WARNING]
+> Deprecated in favor of [@device-portal/react](https://www.npmjs.com/package/@device-portal/react).
+
 # React device portal
 
 [![NPM](https://img.shields.io/npm/v/react-device-portal.svg)](https://www.npmjs.com/package/react-device-portal) ![npm type definitions](https://img.shields.io/npm/types/shared-loading-indicator.svg)
